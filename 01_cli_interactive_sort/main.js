@@ -28,6 +28,17 @@ const inputSortType = async () => {
     });
 };
 
+const validateInput = (arr) => {
+    const regex = /^-?\d+$|^[a-zA-Z]+$/;
+    for (let item of arr) {
+        if (!regex.test(item)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 // Sorting functions for sort()
 const sortWordsAlphabetically = (a, b) => {
     return a.localeCompare(b);
@@ -82,6 +93,7 @@ const filterAndSortArray = (sortFunc, filterFunc) => {
         while (true){
             const inputArray = await inputValues()
             if (inputArray.length !== 10) throw new Error("Incorrect values amount")
+            if (!validateInput(inputArray)) throw new Error("Invalid value! Value must be word or number.")
 
             let convertingFunc;
             switch (await inputSortType()) {
