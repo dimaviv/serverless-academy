@@ -50,6 +50,7 @@ const checkCompletionFromAPIs = async (endpoints) => {
             for (let i = 0; i < 3; i++) {
                 try {
                     res = await fetch(endpoint);
+                    res = await res.json()
                     if (res) break;
 
                 } catch (e) {
@@ -71,4 +72,3 @@ const checkCompletionFromAPIs = async (endpoints) => {
 }
 
 await checkCompletionFromAPIs(endpoints)
-
