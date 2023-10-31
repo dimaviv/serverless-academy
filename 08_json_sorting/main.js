@@ -20,10 +20,6 @@ const endpoints = [
     'https://jsonbase.com/sls-team/json-350',
     'https://jsonbase.com/sls-team/json-64'
 ];
-//const data = {name:"asd", isDone:true}
-// const data = {name:"asd", completion:{isDone:true}}
-//const data = {name:"asd", tasks:[{name:'task1', isDone:false}]}
-const data = {name:"asd", tasks:[{basic: [{name: 'task1', isDone: true}]}]}
 
 
 const getIsDone = async (json) => {
@@ -47,28 +43,32 @@ const getIsDone = async (json) => {
 
 const checkCompletionFromAPIs = async (endpoints) => {
     try {
-        for (const endpoint of endpoints){
+        let countTrue = 0;
+        let countFalse = 0;
+        for (const endpoint of endpoints) {
             let res;
             for (let i = 0; i < 3; i++) {
                 try {
                     res = await fetch(endpoint);
                     if (res) break;
 
-                } catch (e) {}
+                } catch (e) {
+                }
             }
-           // res = data
             const isDone = await getIsDone(res)
+            if (isDone === true) countTrue++;
+            if (isDone === false) countFalse++;
+
             const success = res ? 'Success' : 'Fail'
             let result = res ? `isDone - ${isDone}` : "The endpoint is unavailable"
             console.log(`[${success}] ${endpoint}: ${result}`)
         }
-    }catch (e) {
+        console.log(`\nFound True values: ${countTrue},`)
+        console.log(`Found False values: ${countFalse}`)
+    } catch (e) {
         console.log(`error fetching data`)
     }
 }
 
 await checkCompletionFromAPIs(endpoints)
 
-
-// const isDone = await getIsDone(data)
-// console.log("isDone" + " -> " + isDone)
