@@ -5,17 +5,19 @@ services:
     image: postgres
     restart: always
     environment:
-      POSTGRES_USER: <USER>
-      POSTGRES_PASSWORD: <PASS>
-      POSTGRES_DB: <DB_NAME>
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: postgres
     ports:
-      - "5432:5439"
+      - "5569:5432"
     volumes:
       - ./data:/var/lib/postgresql/data
   server:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      .env
     ports:
       - "5000:5000"
     depends_on:

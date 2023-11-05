@@ -1,14 +1,13 @@
-FROM node:18.18.0
+FROM node:18.18.0-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY package.json ./
-COPY package-lock.json ./
+COPY ./package.json ./
 
-RUN npm install
+RUN npm i
 
 COPY . .
 
 EXPOSE 5000
 
-CMD [ "node", "index.js" ]
+CMD [ "npm", "run", "start" ]
