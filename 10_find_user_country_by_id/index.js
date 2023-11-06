@@ -23,7 +23,7 @@ app.use('/api', router)
 app.set('trust proxy', true);
 
 // ErrorHandler, the last Middleware
-//app.use(errorHandler)
+app.use(errorHandler)
 
 
 const start = async () => {
