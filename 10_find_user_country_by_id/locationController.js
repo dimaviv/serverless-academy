@@ -30,8 +30,8 @@ class LocationController {
 
     async detectLocation(req, res, next) {
         try {
-            const userIP = "45.177.176.23" // Mexico;
-            //const userIP = req.headers['x-forwarded-for'];
+            // const userIP = "45.177.176.23" // Mexico;
+            const userIP = req.headers['x-forwarded-for'];
             if (!userIP) return next(ApiError.badRequest("No IP address detected"))
 
             let userLocation = 'Unknown';
