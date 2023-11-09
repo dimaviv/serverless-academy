@@ -1,3 +1,6 @@
+# static data
+11_json_storage/data/*
+
 # IDE
 .idea
 
@@ -118,6 +121,7 @@ dist
 
 # DynamoDB Local files
 .dynamodb/
+
 
 # TernJS port file
 .tern-port
