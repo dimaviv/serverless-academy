@@ -2,10 +2,10 @@ import {STORAGE_TYPE} from "./config.env.js";
 
 let storageRepository;
 if (STORAGE_TYPE === 'dynamodb') {
-    storageRepository = await import("./dynamoDbRepository.js");
+    storageRepository = await import("./repositories/dynamoDbRepository.js");
     console.log('Storage: DynamoDB')
 } else {
-    storageRepository = await import("./fileSystemRepository.js");
+    storageRepository = await import("./repositories/fileSystemRepository.js");
     console.log('Storage: File System')
 }
 storageRepository = storageRepository.default
