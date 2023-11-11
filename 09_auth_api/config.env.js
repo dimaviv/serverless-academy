@@ -1,8 +1,0 @@
-export const APP_PORT = process.env.APP_PORT  || "5000"
-export const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY  || "asdasdasdsdfgksd"
-export const ACCESS_TOKEN_TTL_MINUTES = process.env.JWT_SECRET_KEY  || "60"
-export const POSTGRES_USER = process.env.POSTGRES_USER || "postgres"
-export const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || "1234"
-export const POSTGRES_HOST = process.env.POSTGRES_HOST || "localhost"
-export const POSTGRES_PORT = process.env.POSTGRES_PORT || "5432"
-export const POSTGRES_DATABASE = process.env.POSTGRES_DATABASE || "postgresAAA"
