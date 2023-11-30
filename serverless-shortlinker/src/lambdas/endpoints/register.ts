@@ -2,17 +2,17 @@ import bcrypt from 'bcryptjs';
 import {Dynamo} from "../common/Dynamo";
 import { v4 as uuidv4 } from 'uuid';
 import {generateJWE} from "../common/utils/jwt-utils";
+import {Responses} from "../common/API_Responses";
 
 
 export const register = async (event) => {
     try {
         console.log("event", event);
         const { email, password } = JSON.parse(event.body);
-
+        console.log("email", email)
         const isExists = await Dynamo.getUserByEmail(email)
-        if (isExists) return {
-            statusCode: 401,
-            body: JSON.stringify({ message: 'User with such email already exists' }),
+        if (isExists){
+            return Responses._401({ message: 'User with such email already exists' })
         }
 
         const id = uuidv4();
@@ -22,15 +22,9 @@ export const register = async (event) => {
 
         const token = await generateJWE({ sub:user.id, email: user.email })
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ token }),
-        };
+        return Responses._200({token})
     } catch (error) {
         console.log(error)
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: 'Internal Server Error' }),
-        };
+        return Responses._500({ message: 'Internal Server Error' })
     }
 };

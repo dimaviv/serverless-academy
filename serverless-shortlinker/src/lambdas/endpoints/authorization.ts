@@ -1,24 +1,22 @@
 import {verifyToken} from "../common/utils/jwt-utils";
 
 
-export const authorization = async (event, context, callback) => {
-    console.log(event)
-    console.log(event.authorizationToken)
-    console.log(context)
-    const token = event.authorizationToken.split(' ')[1];
-    const methodArn = event.methodArn;
+export const authorization = async (event, _context, callback) => {
+    try {
+        const token = event.authorizationToken.split(' ')[1];
+        const methodArn = event.methodArn;
 
-    if (!token || !methodArn) return callback(null, "No token or arn method");
+        if (!token || !methodArn) return callback("No token or arn method");
 
-    const decodedToken = await verifyToken(token);
-    const policy = generatePolicy(decodedToken.sub, 'Allow', event.methodArn)
+        const decodedToken = await verifyToken(token);
+        const policy = generatePolicy(decodedToken.sub, 'Allow', event.methodArn)
 
-    console.log(decodedToken)
-    console.log(policy)
-
-    if (decodedToken && decodedToken.sub) {
-        return callback(null, policy);
-    } else {
+        if (decodedToken && decodedToken.sub) {
+            return callback(null, policy);
+        } else {
+            return callback('Unauthorized');
+        }
+    }catch (e) {
         return callback('Unauthorized');
     }
 }

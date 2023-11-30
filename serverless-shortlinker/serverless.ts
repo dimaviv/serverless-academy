@@ -19,28 +19,29 @@ const serverlessConfiguration: AWS = {
       LINKS_TABLE: '${self:custom.linksTable}',
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
-      JWT_SECRET: process.env.JWT_SECRET || 'defaultSecret',
+      JWT_SECRET: '${self:custom.secrets.JWT_SECRET}',
+      AWS_ACCOUNT_ID: '${self:custom.AWS_ACCOUNT_ID}',
     },
     iam:{
       role:{
         statements:[
           {
             Effect: 'Allow',
-            Action: [
-              'dynamodb:Query',
-              'dynamodb:Scan',
-              'dynamodb:GetItem',
-              'dynamodb:PutItem',
-              'dynamodb:UpdateItem',
-              'dynamodb:DeleteItem',
-            ],
+            Action: "*",
             Resource: '*',
           },
-        ]}
+        ]},
     }
   },
   // import the function via paths
   functions: {
+    sendLinkDeactivationEmail:{
+      handler: 'src/lambdas/scheduledTasks/sendLinkDeactivationEmail.sendLinkDeactivationEmail',
+    },
+
+    scheduledDeactivateLink:{
+      handler: 'src/lambdas/scheduledTasks/deactivateLink.scheduleDeactivateLink'
+    },
     login: {
       handler:'src/lambdas/endpoints/login.login',
       events: [{
@@ -79,14 +80,44 @@ const serverlessConfiguration: AWS = {
             },
           },
         }
+      }],
+    },
+    redirect:{
+      handler:'src/lambdas/endpoints/redirect.redirect',
+      events: [{
+        http:{
+          path:'{linkId}',
+          method:'get',
+          cors: true,
+        }
+      }]
+    },
+    deactivateLink:{
+      handler:'src/lambdas/endpoints/deactivateLink.deactivateLink',
+      events: [{
+        http:{
+          path:'link/deactivate/{linkId}',
+          method:'post',
+          cors: true,
+          authorizer: {
+            name: 'authorizer',
+            identitySource: 'method.request.header.Authorization',
+            arn: {
+              'Fn::GetAtt': ['AuthorizerLambdaFunction', 'Arn'],
+            },
+          },
+        }
       }]
     },
 
   },
   package: { individually: true },
   custom: {
-    usersTable: 'users1',
+    secrets: "${file(secrets.json)}",
+    usersTable: 'users',
     linksTable: 'links',
+    AWS_ACCOUNT_ID: 'x5vzbv22kk',
+    AWS_REGION: 'us-east-1',
     esbuild: {
       bundle: true,
       minify: false,
@@ -100,13 +131,58 @@ const serverlessConfiguration: AWS = {
   },
   resources: {
     Resources: {
-      MyDynamoDBTable: {
+      UsersTable: {
         Type: 'AWS::DynamoDB::Table',
         Properties: {
           TableName: '${self:custom.usersTable}',
           AttributeDefinitions: [
             {
               AttributeName: 'id',
+              AttributeType: 'S',
+            },
+            {
+              AttributeName: 'email',
+              AttributeType: 'S',
+            },
+          ],
+          KeySchema: [
+            {
+              AttributeName: 'id',
+              KeyType: 'HASH',
+            },
+          ],
+
+          GlobalSecondaryIndexes:[{
+            IndexName: 'emailIndex',
+            KeySchema:[{
+              AttributeName: 'email',
+              KeyType: 'HASH',
+            }],
+            Projection:{
+              ProjectionType: 'ALL'
+            },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          }],
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5,
+          },
+        },
+      },
+      LinksTable: {
+        Type: 'AWS::DynamoDB::Table',
+        Properties: {
+          TableName: '${self:custom.linksTable}',
+          AttributeDefinitions: [
+            {
+              AttributeName: 'id',
+              AttributeType: 'S',
+            },
+            {
+              AttributeName: 'userId',
               AttributeType: 'S',
             },
           ],
@@ -120,6 +196,21 @@ const serverlessConfiguration: AWS = {
             ReadCapacityUnits: 5,
             WriteCapacityUnits: 5,
           },
+          GlobalSecondaryIndexes:[{
+            IndexName: 'userIdIndex',
+            KeySchema:[{
+              AttributeName: 'userId',
+              KeyType: 'HASH',
+            }],
+            Projection:{
+              ProjectionType: 'ALL'
+            },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          }]
+
         },
       },
     },
