@@ -28,6 +28,8 @@ export const queueDeactivationNotification = async (link) => {
 export const deactivateLinkById = async (linkId, userId = null) => {
     const link = await Dynamo.getById(linkId, process.env.LINKS_TABLE)
 
+    if (!link.isActive) return Responses._400({ message: 'Link is already deactivated' })
+
     if (userId && link.userId !== userId){
         return Responses._401({ message: 'User is not the link owner' })
     }
