@@ -16,9 +16,10 @@ export const shortenLink = async (event) => {
 
     const link = await Dynamo.write(newLink, process.env.LINKS_TABLE)
     console.log('link', link)
-    const shortLink = `https://${event.requestContext.apiId}.execute-api.${process.env.AWS_REGION}.amazonaws.com/dev/${link.id}`;
+    const shortLink = `${process.env.HOST_URL}/${link.id}`;
 
-    const time = new Date(new Date().getTime() + 60000).toISOString();
+    //set invocation time
+    const time = new Date(new Date().getTime()).toISOString();
 
     const schedule = await scheduleDeactivation(link.id, time, {id:link.id});
     console.log(schedule)

@@ -7,7 +7,8 @@ import {Responses} from "../common/API_Responses";
 export const getUserLinks = async (event) => {
 
     const user = await verifyToken(event.headers.Authorization.split(' ')[1])
-    const links = await Dynamo.getUserLinks(user.id)
+
+    const links = await Dynamo.getUserLinks(user.sub)
 
     return Responses._200({links})
 };

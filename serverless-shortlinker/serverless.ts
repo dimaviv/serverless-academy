@@ -5,7 +5,11 @@ import type { AWS } from '@serverless/typescript';
 const serverlessConfiguration: AWS = {
   service: 'serverless-shortlinker',
   frameworkVersion: '3',
-  plugins: ['serverless-esbuild'],
+  plugins: ['serverless-esbuild',
+    'serverless-create-global-dynamodb-table',
+  ],
+
+  useDotenv: true,
   provider: {
     name: 'aws',
     runtime: 'nodejs18.x',
@@ -17,10 +21,23 @@ const serverlessConfiguration: AWS = {
     environment: {
       USERS_TABLE: '${self:custom.usersTable}',
       LINKS_TABLE: '${self:custom.linksTable}',
+      JWT_SECRET: '${env:JWT_SECRET}',
+      AWS_ACCOUNT_ID: '${aws:accountId}',
+      API_GATEWAY_ID: { "Ref": "ApiGatewayRestApi" },
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
-      JWT_SECRET: '${self:custom.secrets.JWT_SECRET}',
-      AWS_ACCOUNT_ID: '${self:custom.AWS_ACCOUNT_ID}',
+      HOST_URL:
+          {
+            "Fn::Join":
+                [
+                  "",
+                  [
+                    "https://",
+                    { "Ref": "ApiGatewayRestApi" },
+                    ".execute-api.${aws:region}.amazonaws.com/${sls:stage}",
+                  ],
+                ],
+          }
     },
     iam:{
       role:{
@@ -35,15 +52,11 @@ const serverlessConfiguration: AWS = {
   },
   // import the function via paths
   functions: {
-    sendLinkDeactivationEmail:{
-      handler: 'src/lambdas/scheduledTasks/sendLinkDeactivationEmail.sendLinkDeactivationEmail',
-    },
-
     scheduledDeactivateLink:{
       handler: 'src/lambdas/scheduledTasks/deactivateLink.scheduleDeactivateLink'
     },
     login: {
-      handler:'src/lambdas/endpoints/login.login',
+      handler:'src/lambdas/auth/login.login',
       events: [{
         http:{
           path:'login',
@@ -53,7 +66,7 @@ const serverlessConfiguration: AWS = {
       }]
     },
     register: {
-      handler:'src/lambdas/endpoints/register.register',
+      handler:'src/lambdas/auth/register.register',
       events: [{
         http:{
           path:'register',
@@ -63,10 +76,10 @@ const serverlessConfiguration: AWS = {
       }]
     },
     authorizer: {
-      handler:'src/lambdas/endpoints/authorization.authorization',
+      handler:'src/lambdas/auth/authorization.authorization',
     },
     shortenLink:{
-      handler:'src/lambdas/endpoints/shortenLink.shortenLink',
+      handler:'src/lambdas/links/shortenLink.shortenLink',
       events: [{
         http:{
           path:'link/shorten',
@@ -83,7 +96,7 @@ const serverlessConfiguration: AWS = {
       }],
     },
     redirect:{
-      handler:'src/lambdas/endpoints/redirect.redirect',
+      handler:'src/lambdas/links/redirect.redirect',
       events: [{
         http:{
           path:'{linkId}',
@@ -92,8 +105,25 @@ const serverlessConfiguration: AWS = {
         }
       }]
     },
+    getUserLinks:{
+      handler:'src/lambdas/links/getUserLinks.getUserLinks',
+      events: [{
+        http:{
+          path:'link/user',
+          method:'get',
+          cors: true,
+          authorizer: {
+            name: 'authorizer',
+            identitySource: 'method.request.header.Authorization',
+            arn: {
+              'Fn::GetAtt': ['AuthorizerLambdaFunction', 'Arn'],
+            },
+          },
+        }
+      }]
+    },
     deactivateLink:{
-      handler:'src/lambdas/endpoints/deactivateLink.deactivateLink',
+      handler:'src/lambdas/links/deactivateLink.deactivateLink',
       events: [{
         http:{
           path:'link/deactivate/{linkId}',
@@ -109,15 +139,28 @@ const serverlessConfiguration: AWS = {
         }
       }]
     },
-
+    sendLinkDeactivationEmail:{
+      handler:'src/lambdas/listeners/sendLinkDeactivationEmail.sendLinkDeactivationEmail',
+      events: [{
+        sqs:{
+          arn: {
+            'Fn::GetAtt': ['NotificationQueue', 'Arn'],
+          },
+          batchSize: 10,
+          maximumBatchingWindow:40,
+        }
+      }],
+    },
   },
   package: { individually: true },
   custom: {
-    secrets: "${file(secrets.json)}",
     usersTable: 'users',
     linksTable: 'links',
-    AWS_ACCOUNT_ID: 'x5vzbv22kk',
-    AWS_REGION: 'us-east-1',
+    globalTables:{
+      version: 'v2',
+      regions: ['eu-central-1', 'eu-north-1'],
+      createStack: false,
+    },
     esbuild: {
       bundle: true,
       minify: false,
@@ -131,6 +174,12 @@ const serverlessConfiguration: AWS = {
   },
   resources: {
     Resources: {
+      NotificationQueue:{
+        Type: 'AWS::SQS::Queue',
+        Properties:{
+          QueueName: 'NotificationQueue',
+        }
+      },
       UsersTable: {
         Type: 'AWS::DynamoDB::Table',
         Properties: {
@@ -151,7 +200,7 @@ const serverlessConfiguration: AWS = {
               KeyType: 'HASH',
             },
           ],
-
+         // BillingMode: 'PAY_PER_REQUEST',
           GlobalSecondaryIndexes:[{
             IndexName: 'emailIndex',
             KeySchema:[{
@@ -161,6 +210,7 @@ const serverlessConfiguration: AWS = {
             Projection:{
               ProjectionType: 'ALL'
             },
+
             ProvisionedThroughput: {
               ReadCapacityUnits: 5,
               WriteCapacityUnits: 5,
@@ -192,9 +242,10 @@ const serverlessConfiguration: AWS = {
               KeyType: 'HASH',
             },
           ],
+         // BillingMode: 'PAY_PER_REQUEST',
           ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
+            ReadCapacityUnits: 2,
+            WriteCapacityUnits: 2,
           },
           GlobalSecondaryIndexes:[{
             IndexName: 'userIdIndex',
@@ -206,11 +257,10 @@ const serverlessConfiguration: AWS = {
               ProjectionType: 'ALL'
             },
             ProvisionedThroughput: {
-              ReadCapacityUnits: 5,
-              WriteCapacityUnits: 5,
+              ReadCapacityUnits: 2,
+              WriteCapacityUnits: 2,
             },
-          }]
-
+          }],
         },
       },
     },

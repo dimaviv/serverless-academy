@@ -1,5 +1,5 @@
 import {Dynamo} from "../common/Dynamo";
-import {deactivateLinkById} from "@functions/deactivateLink";
+import {deactivateLinkById} from "./deactivateLink";
 import {Responses} from "../common/API_Responses";
 
 
@@ -14,10 +14,10 @@ export const redirect = async (event) => {
         return Responses._400({message:"Link is inactive"})
     }
 
-    await countLinkVisit(linkId)
+    await countLinkVisit(link.id)
 
     if (link.expire === 'once'){
-        await deactivateLinkById(link)
+        await deactivateLinkById(link.id)
     }
 
      return  {

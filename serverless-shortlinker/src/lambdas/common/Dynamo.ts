@@ -91,43 +91,30 @@ export const Dynamo = {
         return data.Items[0];
     },
 
-    // async getUserByEmail(email: string) {
-    //
-    //     const command = new ScanCommand({
-    //         TableName: process.env.USERS_TABLE,
-    //         FilterExpression: "email = :email",
-    //         ExpressionAttributeValues: {
-    //             ":email": email,
-    //         },
-    //         ConsistentRead: true,
-    //     });
-    //
-    //     const data = await dynamoDBClient.send(command);
-    //     console.log(data)
-    //     console.log(data.Items[0])
-    //     if (!data) console.log('Data was not found by email');
-    //     return data.Items[0];
-    // },
-
     async getUserLinks(userId: string) {
-        const command = new QueryCommand({
-            TableName: process.env.LINKS_TABLE,
-            IndexName: 'userIdIndex', // Use the global secondary index
-            KeyConditionExpression: "userId = :userId",
-            ExpressionAttributeValues: {
-                ":userId": userId,
-            },
-            ConsistentRead: true,
-        });
+        try {
+            console.log(userId)
+            const command = new QueryCommand({
+                TableName: process.env.LINKS_TABLE,
+                IndexName: 'userIdIndex', // Use the global secondary index
+                KeyConditionExpression: `userId = :userId`,
+                ExpressionAttributeValues: {
+                    ":userId": userId,
+                },
+            });
 
-        const data = await dynamoDBClient.send(command);
-        console.log(data);
-        console.log(data.Items);
-        if (!data.Items || data.Items.length === 0) {
-            console.log('Links were not found by userId');
+            const data = await dynamoDBClient.send(command);
+            console.log(data);
+            console.log(data.Items);
+            if (!data.Items || data.Items.length === 0) {
+                console.log('Links were not found by userId');
+                return [];
+            }
+            return data.Items;
+        }catch (e){
+            console.error('Error fetching links for userId:', userId, e);
             return [];
         }
-        return data.Items;
     }
     // async getUserLinks(userId: string) {
     //     const command = new ScanCommand({
