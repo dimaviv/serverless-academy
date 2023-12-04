@@ -1,5 +1,7 @@
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand} from "@aws-sdk/lib-dynamodb";
+import {User} from "./types/user.type";
+import {Link} from "./types/link.type";
 
 
 const client = new DynamoDBClient({});
@@ -25,9 +27,9 @@ export const Dynamo = {
         return data;
     },
 
-    async getById(id: string, TableName: string) {
+    async getLinkById(id: string) {
         const command = new GetCommand({
-            TableName,
+            TableName: process.env.LINKS_TABLE,
             Key:{
                 id
             },
@@ -35,20 +37,34 @@ export const Dynamo = {
 
         const response = await dynamoDBClient.send(command);
 
-        return response.Item;
+        return response.Item as Link;
     },
 
-    async putById(Item: {}, TableName: string) {
+    async getUserById(id: string) {
+        const command = new GetCommand({
+            TableName: process.env.USERS_TABLE,
+            Key:{
+                id
+            },
+        });
+
+        const response = await dynamoDBClient.send(command);
+
+        return response.Item as User;
+    },
+
+    async putLinkById(Item: {}) {
         const command = new PutCommand({
-            TableName,
+            TableName: process.env.LINKS_TABLE,
             Item
         });
 
         const response = await dynamoDBClient.send(command);
-        if (response.$metadata.httpStatusCode !== 200) console.log(`Error putting data to table ${TableName}`)
+        if (response.$metadata.httpStatusCode !== 200) console.log(`Error putting data to table ${process.env.LINKS_TABLE}`)
 
-        return Item;
+        return Item as Link;
     },
+
     async incrementNumericFieldById(itemId: string, numericFieldName: string, TableName: string) {
         const updateExpression = `SET ${numericFieldName} = ${numericFieldName} + :increment`;
         const expressionAttributeValues = {
@@ -68,7 +84,7 @@ export const Dynamo = {
         try {
             const response = await dynamoDBClient.send(command);
             console.log(response)
-            return response.Attributes;
+            return {success:true};
         } catch (error) {
             console.error(`Error incrementing numeric field in table ${TableName}: ${error.message}`);
         }
@@ -88,7 +104,7 @@ export const Dynamo = {
         console.log(data)
         console.log(data.Items[0])
         if (!data.Items[0]) console.log('Data was not found by email');
-        return data.Items[0];
+        return data.Items[0] as User;
     },
 
     async getUserLinks(userId: string) {
@@ -96,7 +112,7 @@ export const Dynamo = {
             console.log(userId)
             const command = new QueryCommand({
                 TableName: process.env.LINKS_TABLE,
-                IndexName: 'userIdIndex', // Use the global secondary index
+                IndexName: 'userIdIndex',
                 KeyConditionExpression: `userId = :userId`,
                 ExpressionAttributeValues: {
                     ":userId": userId,
@@ -116,20 +132,5 @@ export const Dynamo = {
             return [];
         }
     }
-    // async getUserLinks(userId: string) {
-    //     const command = new ScanCommand({
-    //         TableName: process.env.LINKS_TABLE,
-    //         FilterExpression: "userId = :userId",
-    //         ExpressionAttributeValues: {
-    //             ":userId": userId,
-    //         },
-    //         ConsistentRead: true,
-    //     });
-    //
-    //     const data = await dynamoDBClient.send(command);
-    //     console.log(data)
-    //     console.log(data.Items)
-    //     if (!data) console.log('Links were not found by userId');
-    //     return data.Items;
-    // },
+
 };

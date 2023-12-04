@@ -1,42 +1,64 @@
 import {Dynamo} from "../common/Dynamo";
 import {verifyToken} from "../common/utils/jwt-utils";
-import {Responses} from "../common/API_Responses";
+import {APIResponse, Responses} from "../common/API_Responses";
 import {sendMessageToSQS} from "@libs/queue-manager";
+import {Link} from "../common/types/link.type";
+import {User} from "../common/types/user.type";
+import ApiError from "../common/ApiError";
 
 
-export const deactivateLink = async (event) => {
-    const { linkId } = event.pathParameters;
-    console.log(linkId)
-    const user = await verifyToken(event.headers.Authorization.split(' ')[1])
+export const deactivateLink = async (event): Promise<APIResponse> => {
+    try {
+        const { linkId } = event.pathParameters;
+        console.log(linkId);
 
-    const deactivatedLink = await deactivateLinkById(linkId, user.id)
-    const notificationQueue = await queueDeactivationNotification(deactivatedLink)
-    console.log(notificationQueue)
-    return Responses._200({ success:!!deactivatedLink, updatedLink: deactivatedLink })
+        const user: User = await verifyToken(event.headers.Authorization.split(' ')[1]);
+
+        const deactivatedLink: Link | APIResponse = await deactivateLinkById(linkId, user.id);
+
+        const notificationQueue = await queueDeactivationNotification(deactivatedLink);
+        console.log(notificationQueue);
+
+        return Responses._200({ success: !!deactivatedLink, updatedLink: deactivatedLink });
+    }catch (e) {
+        if (e instanceof ApiError){
+            return Responses.error(e.status, e.message)
+        }
+        return Responses._500({ message: 'Internal Server Error' });
+    }
+};
+
+export const queueDeactivationNotification = async (link: Link) => {
+    const user: User | null = await Dynamo.getUserById(link.userId);
+
+    if (!user) {
+        throw ApiError.notFound( 'User not found')
+    }
+
+    const shortUrl = `${process.env.HOST_URL}/${link.id}`;
+    const message = { email: user.email, shortUrl, originalUrl: link.url };
+
+    return await sendMessageToSQS(message, 'NotificationQueue');
 };
 
 
-export const queueDeactivationNotification = async (link) => {
-    const user = await Dynamo.getById(link.userId, process.env.USERS_TABLE)
-    const shortUrl = `${process.env.HOST_URL}/${link.id}`;
-    const message = {email: user.email, shortUrl, originalUrl:link.url}
+export const deactivateLinkById = async (linkId: string, userId?: string | null): Promise<Link> => {
+    const link = await Dynamo.getLinkById(linkId);
 
-    return await sendMessageToSQS(message, 'NotificationQueue')
-}
-
-
-export const deactivateLinkById = async (linkId, userId = null) => {
-    const link = await Dynamo.getById(linkId, process.env.LINKS_TABLE)
-
-    if (!link.isActive) return Responses._400({ message: 'Link is already deactivated' })
-
-    if (userId && link.userId !== userId){
-        return Responses._401({ message: 'User is not the link owner' })
+    if (!link) {
+        throw ApiError.badRequest( 'Link not found')
     }
 
-    const updatedLink = {...link, isActive: false};
+    if (!link.isActive) {
+        throw ApiError.badRequest( 'Link is already deactivated')
+    }
 
-    return await Dynamo.putById(updatedLink, process.env.LINKS_TABLE)
-}
+    if (userId && link.userId !== userId) {
+        throw ApiError.badRequest( 'User is not the link owner')
+    }
 
+    const updatedLink = { ...link, isActive: false };
+
+    return Dynamo.putLinkById(updatedLink);
+};
 

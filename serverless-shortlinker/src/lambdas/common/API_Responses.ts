@@ -1,3 +1,10 @@
+export interface APIResponse {
+    headers: object;
+    statusCode: number;
+    body: string;
+}
+
+
 export const Responses = {
     _200(data = {}) {
         return {
@@ -11,6 +18,17 @@ export const Responses = {
         };
     },
 
+    error(status: number, message: string){
+        return {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Methods': '*',
+                'Access-Control-Allow-Origin': '*',
+            },
+            statusCode: status,
+            body: JSON.stringify({message}),
+        };
+    },
     _400(data = {}) {
         return {
             headers: {

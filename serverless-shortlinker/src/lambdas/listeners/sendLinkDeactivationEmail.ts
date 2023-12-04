@@ -1,26 +1,33 @@
 import { SendEmailCommand } from "@aws-sdk/client-ses";
 import { sesClient } from "@libs/ses-client";
+import {SQSEvent} from "aws-lambda";
 
 
-export const sendLinkDeactivationEmail = async (event) => {
-    console.log('event', event)
-    const sqsMessages = event.Records.map((record) => ({
-        ...JSON.parse(record.body),
-    }));
+interface DeactivationMessage {
+    email: string;
+    shortUrl: string;
+    originalUrl: string;
+}
 
-    const promises = await sqsMessages.map((msg) => {
-        const {email, shortUrl, originalUrl} = msg;
+export const sendLinkDeactivationEmail = async (event: SQSEvent) => {
+    console.log('event', event);
+    const sqsMessages: DeactivationMessage[] = event.Records.map((record) => JSON.parse(record.body));
+
+    const promises = sqsMessages.map((msg) => {
+        const { email, shortUrl, originalUrl } = msg;
         const emailText = `Your link ${shortUrl} is no longer active.
-    The resource (${originalUrl}) can't be accessed by it.`
-        console.log(msg)
-        return sendEmailNotification(emailText, email)
-    })
+        The resource (${originalUrl}) can't be accessed by it.`;
+        console.log(msg);
+        return sendEmailNotification(emailText, email);
+    });
+
     const result = await Promise.all(promises);
-    console.log(result)
+    console.log(result);
     return result;
 };
 
-const sendEmailNotification = async (message, address) => {
+
+const sendEmailNotification = async (message: string, address: string) : Promise<void> => {
     const sendEmailCommand  = new SendEmailCommand({
         Destination:{
             ToAddresses:[address]
@@ -33,7 +40,6 @@ const sendEmailNotification = async (message, address) => {
         },
         Source: 'devmail8778@gmail.com'
     })
-
     try {
         await sesClient.send(sendEmailCommand);
         console.log('email sending success')
@@ -41,3 +47,4 @@ const sendEmailNotification = async (message, address) => {
         console.log('error', e);
     }
 }
+
