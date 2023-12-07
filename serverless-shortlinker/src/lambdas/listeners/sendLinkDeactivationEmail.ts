@@ -38,7 +38,7 @@ const sendEmailNotification = async (message: string, address: string) : Promise
             },
             Subject: {Data: 'Link deactivation'}
         },
-        Source: 'devmail8778@gmail.com'
+        Source: process.env.SES_EMAIL
     })
     try {
         await sesClient.send(sendEmailCommand);
