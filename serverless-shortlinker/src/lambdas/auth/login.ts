@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import {Dynamo} from "../common/Dynamo";
+import {Dynamo} from "@libs/dynamo-db";
 import {generateJWE} from "../common/utils/jwt-utils";
 import {APIResponse, Responses} from "../common/API_Responses";
 import {User} from "../common/types/user.type";

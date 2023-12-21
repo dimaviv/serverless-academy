@@ -1,4 +1,4 @@
-import {Dynamo} from "../common/Dynamo";
+import {Dynamo} from "@libs/dynamo-db";
 import {verifyToken} from "../common/utils/jwt-utils";
 import {APIResponse, Responses} from "../common/API_Responses";
 import ApiError from "../common/ApiError";
@@ -18,5 +18,4 @@ export const getUserLinks = async (event): Promise<APIResponse> => {
         }
         return Responses._500({ message: 'Internal Server Error' });
     }
-
 };

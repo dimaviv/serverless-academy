@@ -46,11 +46,11 @@ This is a cloud-based link shortening tool on AWS. It offers link creation and m
 
 - **`/src`**: The main project directory where the source code resides.
   - **`/lambdas`**: Contains API endpoints, categorized by their domain-specific role such as `auth` for authentication and `links` for link management.
-  - **`/common`**: Shared utilities and common modules like `types`, `utils`, and service integrations like `Dynamo.ts` for database operations.
+  - **`/common`**: Shared utilities and common modules like `types`, `utils`.
   - **`/listeners`**: Event listener functions that react to various event triggers.
   - **`/scheduledTasks`**: Functions that are executed on a schedule to perform routine tasks.
 
-- **`/libs`**: Library code that defines the foundational building blocks for the application like `api-gateway.ts` for API Gateway setup and `lambda.ts` for common Lambda configurations.
+- **`/libs`**:  Libs and service integrations like `dynamo-db.ts` for database operations and `ses-client.ts` for sending emails.
 
 - **`/docs`**: Documentation files including explanations and configurations for the project, such as `serverless.docs.yml`.
 

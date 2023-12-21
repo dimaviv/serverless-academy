@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import {customAlphabet } from 'nanoid'
-import {Dynamo} from "../common/Dynamo";
+import {Dynamo} from "@libs/dynamo-db";
 import {verifyToken} from "../common/utils/jwt-utils";
 import {scheduleDeactivation} from "@libs/task-scheduler";
 import {APIResponse, Responses} from "../common/API_Responses";

@@ -7,6 +7,7 @@ const serverlessConfiguration: AWS = {
   frameworkVersion: '3',
   plugins: ['serverless-esbuild',
     'serverless-create-global-dynamodb-table',
+    'serverless-openapi-documentation'
   ],
 
   useDotenv: true,
@@ -50,10 +51,9 @@ const serverlessConfiguration: AWS = {
         ]},
     }
   },
-  // import the function via paths
   functions: {
     scheduledDeactivateLink:{
-      handler: 'src/lambdas/scheduledTasks/deactivateLink.scheduleDeactivateLink'
+      handler: 'src/lambdas/scheduledTasks/deactivateLink.yml.scheduleDeactivateLink',
     },
     login: {
       handler:'src/lambdas/auth/login.login',
@@ -63,7 +63,7 @@ const serverlessConfiguration: AWS = {
           method:'post',
           cors: true,
         }
-      }]
+      }],
     },
     register: {
       handler:'src/lambdas/auth/register.register',
@@ -123,7 +123,7 @@ const serverlessConfiguration: AWS = {
       }]
     },
     deactivateLink:{
-      handler:'src/lambdas/links/deactivateLink.deactivateLink',
+      handler:'src/lambdas/links/deactivateLink.yml.deactivateLink.yml',
       events: [{
         http:{
           path:'link/deactivate/{linkId}',
@@ -154,6 +154,7 @@ const serverlessConfiguration: AWS = {
   },
   package: { individually: true },
   custom: {
+    documentation: '${file(docs/serverless.docs.yml):documentation}',
     usersTable: 'users',
     linksTable: 'links',
     globalTables:{

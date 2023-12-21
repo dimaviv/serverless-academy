@@ -1,7 +1,7 @@
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand} from "@aws-sdk/lib-dynamodb";
-import {User} from "./types/user.type";
-import {Link} from "./types/link.type";
+import {User} from "../lambdas/common/types/user.type";
+import {Link} from "../lambdas/common/types/link.type";
 
 
 const client = new DynamoDBClient({});
@@ -102,7 +102,6 @@ export const Dynamo = {
 
         const data = await dynamoDBClient.send(command);
         console.log(data)
-        console.log(data.Items[0])
         if (!data.Items[0]) console.log('Data was not found by email');
         return data.Items[0] as User;
     },

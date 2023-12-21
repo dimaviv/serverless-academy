@@ -1,4 +1,4 @@
-import {Dynamo} from "../common/Dynamo";
+import {Dynamo} from "@libs/dynamo-db";
 import {verifyToken} from "../common/utils/jwt-utils";
 import {APIResponse, Responses} from "../common/API_Responses";
 import {sendMessageToSQS} from "@libs/queue-manager";

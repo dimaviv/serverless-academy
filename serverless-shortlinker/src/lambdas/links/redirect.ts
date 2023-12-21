@@ -1,4 +1,4 @@
-import {Dynamo} from "../common/Dynamo";
+import {Dynamo} from "@libs/dynamo-db";
 import {deactivateLinkById} from "./deactivateLink";
 import {APIResponse, Responses} from "../common/API_Responses";
 import {Link} from "../common/types/link.type";
